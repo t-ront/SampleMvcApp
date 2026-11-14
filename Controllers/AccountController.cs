@@ -6,12 +6,25 @@ using Microsoft.AspNetCore.Mvc;
 
 public class AccountController : Controller
 {
+    private readonly IConfiguration _configuration;
+
+    public AccountController(IConfiguration configuration)
+    {
+        _configuration = configuration;
+    }
+
     public async Task Login(string returnUrl = "/")
     {
-        var authenticationProperties = new LoginAuthenticationPropertiesBuilder()
-            .WithRedirectUri(returnUrl)
-            .Build();
+        var builder = new LoginAuthenticationPropertiesBuilder()
+                        .WithRedirectUri(returnUrl);
 
+        var isPasswordless = _configuration.GetValue<bool>("Auth0:Passwordless");
+        if (isPasswordless)
+        {
+            builder.WithParameter("connection", "email");
+        }
+
+        var authenticationProperties = builder.Build();
         await HttpContext.ChallengeAsync(Auth0Constants.AuthenticationScheme, authenticationProperties);
     }
 
